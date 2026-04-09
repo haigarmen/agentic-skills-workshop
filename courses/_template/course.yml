@@ -1,0 +1,37 @@
+# Course Manifest — source of truth for this course.
+# Copy this file to courses/<your-course-id>/course.yml and fill in every field.
+# Never edit this template directly.
+
+id: course-id-slug                    # unique, URL-safe, lowercase, hyphen-separated
+title: "Course Title"
+description: "One paragraph describing what this course is about and who it is for."
+version: "1.0.0"
+
+authors:
+  - name: "Author Name"
+    email: "author@example.com"
+
+# Plain-text prerequisites — no references to other course IDs yet.
+prerequisites:
+  - "Basic familiarity with X"
+
+# Searchable tags, e.g. ["beginner", "python", "data-science"]
+tags: []
+
+modules:
+  - id: module-01
+    title: "Module One Title"
+    description: "What this module covers and what learners will accomplish."
+    path: modules/01-module-one       # relative path to the module directory
+    order: 1
+
+  - id: module-02
+    title: "Module Two Title"
+    description: ""
+    path: modules/02-module-two
+    order: 2
+
+settings:
+  exercise_grading: manual            # manual | automated
+  allow_skip: false
+  estimated_hours: 0                  # total estimated time for the full course

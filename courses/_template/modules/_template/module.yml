@@ -1,0 +1,25 @@
+# Module Manifest
+# Copy this file to courses/<course-id>/modules/<NN>-<slug>/module.yml and fill in every field.
+# Never edit this template directly.
+
+id: module-id-slug
+title: "Module Title"
+description: "What learners will accomplish by the end of this module."
+order: 1
+estimated_minutes: 0
+
+lessons:
+  - id: lesson-01
+    title: "Lesson One Title"
+    path: lessons/01-lesson-one/lesson.md   # relative to this module directory
+    order: 1
+    type: reading                           # reading | video | interactive | quiz
+
+# Exercises are stored in exercises/ and referenced by path.
+# This keeps exercises reusable across courses.
+exercises:
+  - id: exercise-01
+    title: "Exercise One Title"
+    path: ../../../../exercises/exercise-01/exercise.md
+    order: 1
+    required: true
