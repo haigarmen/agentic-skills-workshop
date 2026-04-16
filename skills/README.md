@@ -10,6 +10,9 @@ Skills are Claude Code workflows invoked with a `/skill-name` command. Each skil
 | `/create-lesson` | `create-lesson.md` | Add a lesson stub to an existing module |
 | `/create-exercise` | `create-exercise.md` | Add a standalone exercise |
 | `/validate-course` | `validate-course.md` | Check a course manifest for completeness |
+| `/create-visual` | `create-visual.md` | Generate a visual asset spec or diagram for a lesson or module |
+| `/web-research` | `web-research.md` | Research a topic and return a structured brief for use in course generation |
+| `/write-content` | `write-content.md` | Write full lesson body content from a populated lesson stub |
 
 ## Adding a Skill
 

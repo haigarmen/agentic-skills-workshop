@@ -15,10 +15,14 @@ A content-agnostic course creator system. Define courses using manifests and tem
 
 | Task | Command |
 |------|---------|
-| Scaffold a new course | `/create-course` |
+| Generate a complete course (research → syllabus → visuals → marketing) | Run the `course-generator` agent |
+| Scaffold a new course directory | `/create-course` |
 | Add a lesson to a module | `/create-lesson` |
 | Add an exercise | `/create-exercise` |
 | Validate a course | `/validate-course` |
+| Generate a visual asset spec | `/create-visual` |
+| Research a topic | `/web-research` |
+| Write full lesson content | `/write-content` |
 
 ## Templates
 
