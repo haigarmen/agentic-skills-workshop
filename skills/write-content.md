@@ -43,11 +43,36 @@ compatibility: [claude-code, claude]
    - Acceptance Criteria: observable, unambiguous checkboxes
    - Solution: complete worked answer inside a `<details>` block
 
-5. Apply the `brand_profile`:
+5. Apply session design principles when writing any lesson:
+
+   **Learning objectives**
+   - Open every session with explicit learning objectives tied directly to the overall course goal.
+   - Each objective must be measurable — learners should be able to self-assess whether they met it.
+
+   **Session structure**
+   - Divide every session into clearly named sections; never plan a single undivided block.
+   - Plan the session minute by minute so the sequence is explicit on paper, not just in the author's head.
+
+   **Assessment activities**
+   - Embed at least one formative assessment per session: a short task, quiz question, or structured discussion prompt that lets you gauge understanding before moving on.
+
+   **Activity balance**
+   - Each session must balance three elements: engaging activities, hands-on components, and instructional content. No single element should dominate.
+
+   **Later-phase variety**
+   - Once the course shifts into its practice-heavy phase (fewer lectures, more applied work), vary the session format deliberately: rotate between individual tasks, small-group discussions, peer feedback, and reflection exercises to prevent monotony.
+
+   **Materials list**
+   - Produce a materials section for the lesson listing everything needed — hardware, software, stationery, printed sheets, room booking, transportation, or additional assistance. Think broadly; omissions cause last-minute scrambles.
+
+   **Physical environment**
+   - Specify the ideal learning environment for each session. Examples: a clear open room for brainstorming or design thinking; a computer lab for individual and small-group work; an off-site venue (museum, studio, makerspace) for site visits; an exhibition or presentation area for showcases. State the environment type explicitly in the lesson plan.
+
+6. Apply the `brand_profile`:
    - Match vocabulary level to the target audience
    - Mirror the tone (e.g. encouraging and practical vs. concise and technical)
    - Respect assumed knowledge — do not explain concepts covered in earlier lessons
 
-6. Write the populated content to `target_path`. Do not modify any other file.
+7. Write the populated content to `target_path`. Do not modify any other file.
 
-7. Return the path written and a one-line description of what was produced.
+8. Return the path written and a one-line description of what was produced.

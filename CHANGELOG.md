@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-16
+
+### Changed
+- `/write-content` skill enhanced with a session design principles step (step 5): learning objectives tied to course goals, minute-by-minute session structure, mandatory formative assessment activities, activity balance requirements (engaging/hands-on/instructional), later-phase variety guidelines, materials list output, and physical environment specification per session
+
 ## [0.2.0] - 2026-04-16
 
 ### Changed
