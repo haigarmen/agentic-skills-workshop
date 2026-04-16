@@ -18,6 +18,7 @@ A content-agnostic course creation system driven by markdown manifests, agent sy
 | Write full lesson body content into stubs | `/write-content` |
 | Produce a visual asset spec or diagram | `/create-visual` |
 | Research a topic for course content | `/web-research` |
+| Compile all lessons into a combined .docx or .html | `/export-course` |
 
 ## Architecture
 
@@ -64,6 +65,8 @@ Every file type has a mandatory schema — always copy from `_template/`, never 
 2. **Syllabus & Lessons** — `syllabus.md`, `course.yml`, `module.yml` files, `lesson.md` stubs
 3. **Visuals** — `visuals.md` with asset specs and any directly producible diagrams
 4. **Marketing + Resources** (parallel) — `marketing-campaign.md` and `online-resources.md`
+5. **Lesson Content Authoring** — populate every `lesson.md` stub in sequence using `write-content` rules
+6. **Export** — compile all content into `<course-id>-course-document.docx` (`.html` fallback if pandoc unavailable)
 
 All output lands in `courses/<course-id>/`. Do not begin a later stage until the prior stage is complete.
 

@@ -6,7 +6,7 @@ Each agent is defined by an `AGENT.md` file in its own subdirectory. The file co
 
 | Agent | Directory | Purpose |
 |-------|-----------|---------|
-| Course Generator | `course-generator/` | Run the full course creation pipeline: research → syllabus & lessons → visual design → marketing campaign & resource guide |
+| Course Generator | `course-generator/` | Run the full course creation pipeline: research → syllabus & lessons → visual design → marketing campaign & resource guide → lesson content authoring → combined document export |
 | Researcher | `researcher/` | Research a topic on the web and return a structured brief for use in course content creation |
 | Writer | `writer/` | Write fully-populated lesson and exercise content ready for review |
 | Designer | `designer/` | Produce visuals, schematics, and diagrams that support course content |

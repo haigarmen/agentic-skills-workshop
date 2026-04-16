@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-16
+
+### Added
+- `/export-course` skill: compiles all lesson content for a course into a single combined document; produces `.docx` via pandoc with auto-generated ToC, or falls back to a self-contained `.html` file with embedded Mermaid.js if pandoc is unavailable
+- `course-generator` agent Stage 5: after marketing/resources, iterate over every lesson stub in module order and apply `write-content` rules to populate full body content sequentially
+- `course-generator` agent Stage 6: compile all populated lessons into a combined course document using the `export-course` skill; output lands at `courses/<course-id>/<course-id>-course-document.docx`
+
+### Changed
+- `course-generator` agent execution rules updated: Stage 5 must complete before Stage 6; Stage 5 lessons are written sequentially (not in parallel) to maintain continuity of voice
+- `course-generator` allowed skills expanded to include `write-content` and `export-course`
+- `course-generator` output table updated to include fully-written lesson files (Stage 5) and the combined course document (Stage 6)
+- `agents/README.md` pipeline description updated to reflect the full 6-stage pipeline
+- `skills/README.md` updated to register `/export-course`
+- `CLAUDE.md` key workflows table and pipeline section updated
+
 ## [0.3.0] - 2026-04-16
 
 ### Changed

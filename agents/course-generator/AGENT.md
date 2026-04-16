@@ -74,6 +74,41 @@ Run these two sub-tasks in parallel:
 
 ---
 
+### Stage 5 — Lesson Content Authoring
+
+**Goal:** Populate every lesson stub created in Stage 2 with full body content.
+
+- Collect the list of all `lesson.md` files created in Stage 2, ordered by module then lesson `order` field
+- For each lesson stub **in sequence** (do not parallelise — each lesson must maintain continuity with the previous):
+  - Read the stub to identify its `type` and which sections are empty
+  - Read sibling lessons in the same module to avoid repeating content already covered
+  - Apply the `write-content` skill rules to populate the lesson fully:
+    - `interactive` lessons: minute-by-minute session plan, numbered hands-on steps, expected outcomes, formative checks
+    - `reading` lessons: prose with headings, short paragraphs, one concrete example per key concept
+    - `video` lessons: structured script with `[TIMESTAMP]`, `[VISUAL:]`, and `[SPEAKER NOTE:]` markers
+    - `quiz` lessons: minimum 3 questions mixing MCQ, short answer, and scenario formats with answers and explanations
+  - Apply session design principles: explicit learning objectives, three-element activity balance (engaging/hands-on/instructional), at least one formative assessment, materials list, physical environment specification
+  - Write the populated content back to `target_path` — do not modify any other file
+- Output: all `lesson.md` files in `courses/<course-id>/` fully populated
+
+---
+
+### Stage 6 — Course Document Export
+
+**Goal:** Compile all course content into a single combined document for distribution.
+
+- Collect course metadata from `course.yml` and all `module.yml` files
+- Concatenate content in this order:
+  1. Cover section: course title, subtitle, date, course overview table (duration, disciplines, tools, format, final output)
+  2. For each module in order: a module divider section with the module title and description
+  3. For each lesson in the module in order: the full lesson content with Mermaid code blocks converted to readable text-based descriptions (signal flow as `>` blockquotes, tables where appropriate) so the document renders correctly in Word and PDF
+- Write the combined content to `/tmp/<course-id>-combined.md`
+- Run `pandoc /tmp/<course-id>-combined.md --toc --toc-depth=2 -o courses/<course-id>/<course-id>-course-document.docx`
+- If pandoc is not available, fall back to writing a self-contained HTML file at `courses/<course-id>/<course-id>-course-document.html` with embedded CSS and Mermaid.js from CDN (`https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js`) so diagrams render in any browser
+- Output: `courses/<course-id>/<course-id>-course-document.docx` (or `.html` fallback)
+
+---
+
 ## Inputs
 
 **Required:**
@@ -97,6 +132,8 @@ Run these two sub-tasks in parallel:
 - `create-exercise`
 - `web-search`
 - `write-file`
+- `write-content`
+- `export-course`
 
 ## Output
 
@@ -111,11 +148,14 @@ A fully populated course directory at `courses/<course-id>/` containing:
 | `course.yml` | 2 | Populated course manifest |
 | `module.yml` (per module) | 2 | Module-level metadata |
 | `lesson.md` stubs (per lesson) | 2 | Frontmatter populated, body sections present |
+| `lesson.md` (per lesson, fully written) | 5 | Complete session plans, activities, formative checks, materials |
+| `<course-id>-course-document.docx` | 6 | Combined document with ToC (`.html` fallback if pandoc unavailable) |
 
 ## Execution Rules
 
-- **Stages are sequential.** Do not begin Stage 2 until Stage 1 research is complete. Do not begin Stage 3 until Stage 2 is written. Stage 4a and 4b may run in parallel with each other but not before Stage 3 is complete.
+- **Stages are sequential.** Do not begin Stage 2 until Stage 1 research is complete. Do not begin Stage 3 until Stage 2 is written. Stage 4a and 4b may run in parallel with each other but not before Stage 3 is complete. Do not begin Stage 5 until Stage 4 is complete. Do not begin Stage 6 until all lessons in Stage 5 are fully written.
 - **Research informs everything.** The curriculum sequence established in Stage 1 must be reflected in the syllabus, visuals, and marketing copy. Do not generate marketing copy for a curriculum that has not yet been designed.
+- **Stage 5 lessons are sequential, not parallel.** Each lesson must be written after the previous one so continuity of voice and content can be maintained. Do not write all lessons simultaneously.
 - All file IDs must be lowercase, hyphen-separated slugs derived from the course title.
 - Follow the exact schema defined in `courses/_template/course.yml` for all `.yml` files.
 - Do not modify files outside `courses/<course-id>/` and `exercises/`.

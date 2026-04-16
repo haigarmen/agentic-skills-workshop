@@ -13,6 +13,7 @@ Skills are Claude Code workflows invoked with a `/skill-name` command. Each skil
 | `/create-visual` | `create-visual.md` | Generate a visual asset spec or diagram for a lesson or module |
 | `/web-research` | `web-research.md` | Research a topic and return a structured brief for use in course generation |
 | `/write-content` | `write-content.md` | Write full lesson body content from a populated lesson stub |
+| `/export-course` | `export-course.md` | Compile all lesson content into a combined `.docx` or `.html` document with ToC |
 
 ## Adding a Skill
 
