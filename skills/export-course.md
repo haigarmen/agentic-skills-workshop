@@ -1,99 +1,222 @@
 ---
 name: export-course
-description: Compile all lesson content for a course into a single combined document (.docx or .html), with a generated table of contents and module dividers.
-version: "1.1.0"
-tags: [export, documentation, publishing, pandoc, docx, html]
+description: Compile all lesson content into a combined .md file (with to-do markers and a sibling assets/ folder), then render to a standalone .html document.
+version: "2.0.0"
+tags: [export, documentation, publishing, pandoc, html, markdown, assets]
 repository: https://github.com/haigarmen/course-creator
 compatibility: [claude-code, claude]
 ---
 
-1. Accept inputs:
-   - `course_id` — id of the course to export (e.g. `tumo2026`)
-   - `output_format` — `docx` (default) or `html`
-   - `course_path` — path to the course directory (default: `courses/<course_id>/`)
+## Overview
 
-2. Read `course.yml` to extract the course title, subtitle, description, estimated hours, and tags.
+The export pipeline has two explicit stages that produce two persistent artifacts:
 
-3. Collect and sort all modules by scanning `course_path/modules/` for directories containing a `module.yml`. Read each `module.yml` to get the module title, description, and order. Sort by the `order` field.
+1. **Stage A — Assemble:** Build `<course_id>-combined.md` + `assets/` folder inside the course directory.
+2. **Stage B — Render:** Convert `<course_id>-combined.md` → `<course_id>-course-document.html`.
 
-4. For each module in order, collect and sort all lessons by scanning the module's `lessons/` subdirectory for directories containing a `lesson.md`. Read each `lesson.md` frontmatter to get the lesson title and order. Sort by the `order` field.
+Running `/export-course` always executes both stages in sequence. The `.md` file is kept as a first-class editable artifact — users can open it, tweak content or to-do items, then re-run just Stage B by passing `stage: render`.
 
-5. Build the combined document content in this order:
+---
 
-   **Cover section:**
-   - Course title (H1)
-   - Subtitle and date on separate lines
-   - A horizontal rule
-   - Course overview table: duration, disciplines, tools, format, final output — drawn from `course.yml` fields
+## Inputs
 
-   **For each module:**
-   - A module divider (H2): `## Module N — <title>`
-   - The module description paragraph
-   - A horizontal rule
+- `course_id` — id of the course to export (e.g. `tumo2026`)
+- `course_path` — path to the course directory (default: `courses/<course_id>/`)
+- `stage` — `assemble` | `render` | `both` (default: `both`)
 
-   **For each lesson in the module:**
-   - The lesson heading (H1): `# <lesson title>`
-   - The full lesson body content with one transformation: any fenced Mermaid code blocks (` ```mermaid ... ``` `) replaced with a readable text-based equivalent:
-     - If the diagram is a flowchart, render it as a `>` blockquote signal flow description (e.g. `> **A** → **B** → **C**`)
-     - If the diagram contains a table-like structure (families, comparisons), render it as a markdown table instead
-     - Preserve all other content (code blocks in other languages, callouts, lists) verbatim
+---
 
-   **Closing line:**
-   - `*End of course handbook. <course title>.*`
+## Stage A — Assemble
 
-6. Write the combined content to `/tmp/<course_id>-combined.md`.
+### A1. Read course manifest
 
-7. Attempt to export using pandoc:
+Read `<course_path>/course.yml` and extract: `title`, `subtitle`, `description`, `estimated_hours`, `tags`, `tools`, `format`, `final_output`.
+
+### A2. Collect modules and lessons
+
+Scan `<course_path>/modules/` for directories containing a `module.yml`. Read each `module.yml` for `title`, `description`, and `order`. Sort by `order`.
+
+For each module, scan its `lessons/` subdirectory for directories containing a `lesson.md`. Read each `lesson.md` frontmatter for `title` and `order`. Sort by `order`.
+
+### A3. Create the assets folder
+
+Create `<course_path>/assets/` if it does not already exist.
+
+Scan every lesson body for:
+- Markdown image references: `![alt](path)` — any path that is not an `http(s)://` URL
+- Inline SVG blocks: ` ```svg ... ``` ` fenced code blocks or raw `<svg>...</svg>` content
+
+For each local image or SVG file found:
+- Copy the file to `<course_path>/assets/<filename>` (preserve the original filename; overwrite if already present)
+- Rewrite the reference in the lesson body used for the combined doc to `./assets/<filename>`
+
+For inline SVG blocks (` ```svg ... ``` `):
+- Extract the SVG source, write it to `<course_path>/assets/<lesson_id>-<sequential_number>.svg`
+- Replace the fenced block in the combined content with `![<lesson_id> diagram <n>](./assets/<lesson_id>-<sequential_number>.svg)`
+
+Log every file copied/written as a bullet list at the end of Stage A output.
+
+### A4. Build combined content
+
+Assemble the combined markdown in this order:
+
+**Cover section:**
+```
+# <course title>
+
+<subtitle>  
+*Exported: <YYYY-MM-DD>*
+
+---
+
+| | |
+|---|---|
+| **Duration** | <estimated_hours> hours |
+| **Disciplines** | <tags joined with ", "> |
+| **Tools** | <tools> |
+| **Format** | <format> |
+| **Final Output** | <final_output> |
+```
+
+**For each module (in order):**
+```
+---
+
+## Module N — <module title>
+
+<module description>
+
+---
+```
+
+**For each lesson in the module (in order):**
+- The lesson heading: `# <lesson title>`
+- The full lesson body content, with these two transformations only:
+  1. Local image/SVG paths already rewritten to `./assets/...` per step A3
+  2. Mermaid fenced blocks preserved as-is — do NOT convert to text or tables
+
+**Closing line:**
+```
+---
+
+*End of course handbook. <course title>.*
+```
+
+### A5. Inject to-do markers
+
+After assembling the content, scan for incomplete or placeholder sections and inject `- [ ] TODO:` items immediately below them. Criteria for a placeholder section:
+
+- A heading immediately followed by another heading (no body content between them)
+- A heading followed only by a line matching: `TBD`, `TODO`, `Coming soon`, `*placeholder*`, `<!-- TODO ...-->`, or an empty blockquote `>`
+- A lesson whose body is only the frontmatter delimiter (`---`) with nothing below
+
+For each detected stub, append directly after the heading:
+
+```markdown
+> **To Do**
+> - [ ] TODO: add content for this section
+```
+
+Also prepend a summary block just below the cover table if any stubs were found:
+
+```markdown
+> **Document To-Do List** — <N> incomplete section(s) found
+> - [ ] <Lesson/Section title> in Module N
+> - [ ] ...
+```
+
+If no stubs are found, omit this block entirely.
+
+### A6. Write the combined markdown file
+
+Write the assembled content to `<course_path>/<course_id>-combined.md`.
+
+Report:
+- Path to the `.md` file
+- Path to the `assets/` folder and count of files copied/created
+- Count of to-do items injected (or "No incomplete sections found")
+
+---
+
+## Stage B — Render
+
+Reads lesson markdown files directly (not the combined `.md`). Produces `<course_path>/<course_id>-course-document.html` using a **custom Python builder** that generates the established course document style.
+
+### Visual design system
+
+All course HTML documents follow a shared design system first established in `tumo2026-course-document.html`. Key properties:
+
+- CSS variables: `--black #0f0f0f`, `--ink #1a1a1a`, `--accent` (course-specific color), `--accent2` (secondary, purple), `--bg-alt #f7f7f7`, `--page-w 740px`
+- Inter + JetBrains Mono fonts via Google Fonts
+- Dark code blocks: `background: #1a1a2e; color: #e8e8f0`
+- Black table headers: `background: var(--black); color: #fff`
+- Accent-colored list markers: `li::marker { color: var(--accent) }`
+- Full-bleed dark module headers: `.module-header { background: var(--black) }`
+
+**Per-course accent color** — choose a color that fits the subject:
+- `tumo2026`: `#e05a00` (orange — experimental/energy)
+- `guitar-pedal-course-2`: `#c0392b` (deep red — dirt/grit)
+- New courses: select a distinctive hue; avoid the existing two
+
+### Semantic HTML structure
+
+Generate structured HTML — not pandoc's flat output. Each section of a lesson maps to a specific component:
+
+| Markdown section heading | HTML component |
+|---|---|
+| `## Overview` | `<div class="lesson-overview">` — left-bordered grey aside |
+| `## Learning Objectives` | `<div class="objectives">` — blue box with checkbox list |
+| `## Environment` | `<div class="env-box">` — green left-bordered box |
+| `## Materials` | `<div class="materials-box">` — amber box |
+| `## Session Plan` | `<div class="session-plan">` wrapper; `### HH:MM–HH:MM — Title` → `.time-block` with `.time-stamp` + `.time-content` |
+| `## Key Takeaways` | `<div class="takeaways">` — black box with accent heading |
+| `## Next Steps` | `<div class="next-steps">` — grey box |
+| Mermaid fenced blocks | `<div class="mermaid">` — Mermaid.js renders in-browser |
+| All other `##` sections | bare `<h2>` + body |
+
+### Document-level structure (in order)
+
+1. **`<div class="cover">`** — full-height cover with `.cover-label`, `<h1>`, `.subtitle`, and `.cover-meta` grid (6 cells: Format, Duration, Total Hours, Prerequisites, Disciplines, Final Output)
+2. **`<div class="toc">`** — custom `<ol>` with `.toc-module` and `.toc-lessons` lists; lesson type badges
+3. **Per module:** `<div class="module-header">` with `.module-number` label, `<h2>`, `.module-desc`
+4. **Per lesson:** `<div class="lesson-header">` with `.type-badge`, `<h3>`, `.lesson-meta`; then processed lesson body
+
+### Markdown pre-processing (before pandoc)
+
+Apply these fixes to the markdown source of every lesson body **before** passing it to pandoc:
+
+1. **Bold-label + list separation** — pandoc will collapse `**Label:**\n- item` into a single paragraph with inline ` - ` separators unless there is a blank line between them. Insert a blank line whenever a bold-text line (`**...**` or `**...**:`) is immediately followed by a list item (`-` or `*`):
    ```
-   pandoc /tmp/<course_id>-combined.md --toc --toc-depth=2 -o <course_path>/<course_id>-course-document.docx
-   ```
-   - If pandoc succeeds, report the output path and file size.
-   - If pandoc is not installed or returns a non-zero exit code, fall back to step 8.
-
-8. HTML export (if pandoc unavailable or `output_format` is `html`):
-
-   **8a. Generate via pandoc then post-process (preferred):**
-   - Run pandoc with `--standalone --toc --toc-depth=2 --highlight-style=pygments` targeting a `.html` output file
-   - Pandoc HTML-escapes content inside code blocks (e.g. `-->` becomes `--&gt;`, `"` becomes `&quot;`) and wraps Mermaid blocks as `<pre class="mermaid"><code>...</code></pre>`. This breaks Mermaid.js. Fix it with a post-processing step:
-     1. Find every `<pre class="mermaid"><code>(.*?)</code></pre>` block (using dotall/multiline matching)
-     2. Strip the inner `<code>` / `</code>` tags
-     3. Unescape all HTML entities in the block content (convert `&quot;` → `"`, `--&gt;` → `-->`, `&#39;` → `'`, `&amp;` → `&`, etc.)
-     4. Write back as `<pre class="mermaid">raw mermaid content</pre>`
-   - Inject before `</head>`: Inter + JetBrains Mono from Google Fonts; the CSS block from step 8b; the Mermaid.js script tag with `mermaid.initialize({ startOnLoad: true, theme: 'neutral' })`
-
-   **8b. CSS to inject (embed verbatim in `<style>`):**
-   ```css
-   body { font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; max-width: 860px; margin: 0 auto; padding: 2rem 2rem 4rem; }
-   h1 { font-size: 2rem; margin-top: 3rem; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.4rem; }
-   h2 { font-size: 1.4rem; margin-top: 2.5rem; color: #2a2a2a; }
-   h3 { font-size: 1.1rem; margin-top: 2rem; color: #444; }
-   pre, code { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; }
-   pre:not(.mermaid) { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 1rem 1.2rem; overflow-x: auto; }
-   code { background: #f0f0f0; padding: 0.15em 0.35em; border-radius: 3px; }
-   pre code { background: none; padding: 0; }
-   pre.mermaid { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 1.5rem; text-align: center; }
-   blockquote { border-left: 4px solid #0070f3; margin: 1.5rem 0; padding: 0.8rem 1.2rem; background: #f0f6ff; border-radius: 0 6px 6px 0; color: #333; }
-   table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; font-size: 0.9rem; }
-   th { background: #f6f8fa; font-weight: 600; }
-   th, td { border: 1px solid #d0d7de; padding: 0.6rem 0.9rem; text-align: left; }
-   tr:nth-child(even) td { background: #fafafa; }
-   hr { border: none; border-top: 1px solid #e5e5e5; margin: 2.5rem 0; }
-   nav#TOC { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 8px; padding: 1.5rem 2rem; margin: 2rem 0 3rem; }
-   nav#TOC ul { margin: 0.3rem 0; padding-left: 1.4rem; }
-   nav#TOC li { margin: 0.25rem 0; }
-   nav#TOC a { color: #0070f3; text-decoration: none; }
-   a { color: #0070f3; }
-   @media print {
-     body { max-width: 100%; padding: 0; font-size: 11pt; }
-     h1 { page-break-before: always; }
-     h1:first-of-type { page-break-before: avoid; }
-     pre.mermaid { page-break-inside: avoid; }
-     nav#TOC { page-break-after: always; }
-   }
+   regex: (\*\*[^*]+\*\*:?)\n([-*])
+   replace: \1\n\n\2
    ```
 
-   **8c. Direct Python fallback (if pandoc unavailable):**
-   - Write the HTML file directly without pandoc, embedding the combined markdown content converted to minimal HTML (headings, paragraphs, code blocks, blockquotes). Preserve Mermaid fenced blocks as `<pre class="mermaid">raw content</pre>` — do NOT HTML-escape the Mermaid block contents.
-   - Apply the same CSS from step 8b and the same Mermaid.js script tag.
+### Build process
 
-9. Return the output file path and a one-line summary of what was produced (format, number of modules, number of lessons).
+Use pandoc for per-section markdown→HTML fragment conversion (`--from markdown --to html --highlight-style=pygments`), then apply the semantic transformations above in Python. The reference implementation is `skills/build_course_html.py`.
+
+**Mermaid fix:** strip inner `<code>` wrapper and unescape HTML entities in all mermaid blocks; use `<div class="mermaid">` not `<pre>`.
+
+### Session plan time-block pattern
+
+`### 0:00–0:20 — Title` → split at the `—` separator, output:
+```html
+<div class="time-block">
+  <div class="time-stamp">0:00–0:20</div>
+  <div class="time-content"><strong>Title</strong>
+    ... body content ...
+  </div>
+</div>
+```
+
+**Critical:** the closing `</div></div>` for each time-block is written **before** the opening of the next time-block. The final time-block in a session is never followed by another time-block, so its closing tags must be appended explicitly after the loop — not left open. Unclosed time-block divs cause all subsequent content (takeaways, next-steps, following modules) to be rendered inside the flex row, producing broken vertical column layouts.
+
+---
+
+## Output
+
+Return:
+- Path to `<course_id>-combined.md`
+- Path to `assets/` folder and file count
+- Path to `<course_id>-course-document.html` and file size
+- One-line summary: module count, lesson count, asset count, to-do item count

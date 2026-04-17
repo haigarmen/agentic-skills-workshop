@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-04-16
+
+### Fixed
+- `/export-course` skill Stage B: documented two rendering bugs found and fixed during `guitar-pedal-course-2` export:
+  1. **Unclosed final time-block** — the closing `</div></div>` for the last `.time-block` in a session plan was never written, causing all subsequent content (takeaways, next-steps, following modules) to render inside the flex row as broken vertical columns. Fix: always append closing tags after the time-block loop, not only before subsequent blocks.
+  2. **Bold-label + list collapsing** — pandoc collapses `**Label:**\n- item` (no blank line) into a single paragraph with inline ` - ` separators. Fix: pre-process markdown before pandoc, inserting a blank line between any bold-text line and a directly following list item (`(\*\*[^*]+\*\*:?)\n([-*])` → `\1\n\n\2`).
+- `skills/build_course_html.py` updated with both fixes
+
+## [0.5.1] - 2026-04-16
+
+### Changed
+- `/export-course` skill Stage B rewritten to describe the custom Python HTML builder approach (replacing pandoc flat output + CSS injection). Stage B now documents the shared visual design system, per-course accent color convention, full semantic component mapping (`lesson-overview`, `objectives`, `env-box`, `materials-box`, `session-plan`, `time-block`, `takeaways`, `next-steps`), and the document-level structure (cover, TOC, module headers, lesson headers). Reference implementation saved at `skills/build_course_html.py`.
+- `guitar-pedal-course-2` HTML rebuilt using the new builder — now matches `tumo2026` document style with dark module headers, semantic section boxes, time-stamped session blocks, dark code backgrounds, and accent-colored list markers. Accent color set to `#c0392b` (deep red).
+
+## [0.5.0] - 2026-04-16
+
+### Changed
+- `/export-course` skill rewritten as v2.0.0 with a two-stage pipeline (Assemble → Render):
+  - **Stage A** writes a persistent `<course-id>-combined.md` directly into the course directory (no longer a throwaway `/tmp/` file) and creates a sibling `assets/` folder containing all local images and SVGs extracted from lessons (references rewritten to `./assets/<filename>`)
+  - **Stage A** detects stub/placeholder sections (empty bodies, TBD headings) and injects `- [ ] TODO:` markers plus a summary to-do block at the top of the document
+  - Mermaid fenced blocks are now preserved as-is in the combined `.md` (no longer converted to blockquotes or tables) — Mermaid.js renders them in the HTML output
+  - **Stage B** is now the only render target: pandoc → `.html` (Python fallback if unavailable); `.docx` output removed
+  - HTML post-processing and `<head>` injection unchanged; added task-list checkbox CSS for `- [ ]` items; added `img` max-width rule for assets
+  - New `stage` input (`assemble` | `render` | `both`) lets users re-render from an edited `.md` without re-assembling
+- `course-generator` agent Stage 6 updated to match new two-stage export pipeline; output table updated to list `combined.md`, `assets/`, and `.html` as separate artifacts
+
 ## [0.4.1] - 2026-04-16
 
 ### Fixed

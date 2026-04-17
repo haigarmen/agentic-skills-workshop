@@ -95,17 +95,24 @@ Run these two sub-tasks in parallel:
 
 ### Stage 6 — Course Document Export
 
-**Goal:** Compile all course content into a single combined document for distribution.
+**Goal:** Compile all course content into a combined `.md` file + `assets/` folder, then render to a self-contained HTML document.
 
+Run the `export-course` skill (`stage: both`). It executes two sub-stages:
+
+**Stage A — Assemble:**
 - Collect course metadata from `course.yml` and all `module.yml` files
-- Concatenate content in this order:
-  1. Cover section: course title, subtitle, date, course overview table (duration, disciplines, tools, format, final output)
-  2. For each module in order: a module divider section with the module title and description
-  3. For each lesson in the module in order: the full lesson content with Mermaid code blocks converted to readable text-based descriptions (signal flow as `>` blockquotes, tables where appropriate) so the document renders correctly in Word and PDF
-- Write the combined content to `/tmp/<course-id>-combined.md`
-- Run `pandoc /tmp/<course-id>-combined.md --toc --toc-depth=2 -o courses/<course-id>/<course-id>-course-document.docx`
-- If pandoc is not available, fall back to writing a self-contained HTML file at `courses/<course-id>/<course-id>-course-document.html` with embedded CSS and Mermaid.js from CDN (`https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js`) so diagrams render in any browser
-- Output: `courses/<course-id>/<course-id>-course-document.docx` (or `.html` fallback)
+- Concatenate content: cover section → module dividers → full lesson bodies (Mermaid blocks preserved as-is)
+- Scan lessons for local image refs and inline SVG fenced blocks; copy/write them to `courses/<course-id>/assets/` and rewrite references to `./assets/<filename>`
+- Detect stub/empty sections and inject `- [ ] TODO:` markers; prepend a summary to-do block if any stubs exist
+- Write to `courses/<course-id>/<course-id>-combined.md` (persistent, editable artifact)
+
+**Stage B — Render:**
+- Run pandoc on the combined `.md` → `courses/<course-id>/<course-id>-course-document.html`
+- Post-process Mermaid blocks (strip inner `<code>` wrapper, unescape HTML entities)
+- Inject Inter + JetBrains Mono fonts, CSS, and Mermaid.js CDN script into `<head>`
+- If pandoc unavailable, use Python fallback to write minimal HTML directly
+
+- Output: `courses/<course-id>/<course-id>-combined.md`, `courses/<course-id>/assets/`, `courses/<course-id>/<course-id>-course-document.html`
 
 ---
 
@@ -149,7 +156,9 @@ A fully populated course directory at `courses/<course-id>/` containing:
 | `module.yml` (per module) | 2 | Module-level metadata |
 | `lesson.md` stubs (per lesson) | 2 | Frontmatter populated, body sections present |
 | `lesson.md` (per lesson, fully written) | 5 | Complete session plans, activities, formative checks, materials |
-| `<course-id>-course-document.docx` | 6 | Combined document with ToC (`.html` fallback if pandoc unavailable) |
+| `<course-id>-combined.md` | 6 | Combined editable markdown with to-do markers |
+| `assets/` | 6 | Folder of images and SVGs extracted from lessons |
+| `<course-id>-course-document.html` | 6 | Standalone HTML with ToC, Mermaid.js, and embedded styles |
 
 ## Execution Rules
 
